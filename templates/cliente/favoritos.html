@@ -1,0 +1,16 @@
+{% include 'head.html' %}
+
+<div class="container mt-4">
+    <h1>Tus Productos Favoritos</h1>
+    <div class="row" id="favoritos-container">
+        {% for producto in productos %}
+        <div class="col-md-4 mb-4">
+            <div class="producto">
+                <img src="{{ producto.imagen }}" class="img-fluid" alt="Imagen del producto">
+                <h3>{{ producto.nombre }}</h3>
+                <p><strong>Descripción:</strong> {{ producto.descripcion }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>

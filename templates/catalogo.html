@@ -1,0 +1,170 @@
+{% include 'head.html' %}
+
+<body>
+    <div class="container mt-4">
+        <div class="row">
+            <h1>CATÁLOGO</h1>
+            <div class="row" id="productos-container">
+                <!-- Aquí se mostrarán los productos -->
+            </div>
+        </div>
+    </div>
+
+<!-- Modal para mostrar la imagen de prueba de gafas -->
+<div class="modal fade" id="probarGafasModal" tabindex="-1" role="dialog" aria-labelledby="probarGafasModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="probarGafasModalLabel">Prueba de Gafas</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <img id="imgGafas" src="#" class="img-fluid" alt="Imagen de prueba de gafas">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <style>
+        .producto {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            transition: box-shadow 0.3s ease;
+            height: 100%;
+        }
+
+        .producto:hover {
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .producto img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .producto h3 {
+            margin-top: 10px;
+            font-size: 1.5rem;
+        }
+
+        .producto p {
+            margin-bottom: 5px;
+        }
+
+        .favorito-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+        }
+
+        .probar-gafas-btn {
+            margin-top: 10px;
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            cargarProductos();
+        });
+    
+        async function cargarProductos() {
+            try {
+                const response = await fetch('/api/productos');
+                if (!response.ok) {
+                    throw new Error('Error al cargar los productos');
+                }
+                const productos = await response.json();
+                const productosContainer = document.getElementById('productos-container');
+                productosContainer.innerHTML = '';
+    
+                productos.forEach(producto => {
+                    const productoDiv = document.createElement('div');
+                    productoDiv.classList.add('col-md-4');
+    
+                    const esFavorito = producto.es_favorito === 1;
+    
+                    productoDiv.innerHTML = `
+                        <div class="producto">
+                            <img src="${producto.imagen}" class="img-fluid" alt="Imagen del producto">
+                            <h3>${producto.nombre}</h3>
+                            <p><strong>Descripción:</strong> ${producto.descripcion}</p>
+                            <button class="btn btn-link favorito-btn ${esFavorito ? 'favorito-activo' : ''}" data-producto-id="${producto.id}">
+                                <i class="fas fa-heart${esFavorito ? ' text-danger' : ''}"></i>
+                            </button>
+                            <button class="btn btn-primary btn-sm probar-gafas-btn" data-producto-id="${producto.id}" data-toggle="modal" data-target="#probarGafasModal">
+                                Probar Gafas
+                            </button>
+                        </div>
+                    `;
+    
+                    productosContainer.appendChild(productoDiv);
+    
+                    const probarGafasBtn = productoDiv.querySelector('.probar-gafas-btn');
+                    probarGafasBtn.addEventListener('click', async function () {
+                        const productoId = this.getAttribute('data-producto-id');
+                        const imgGafas = document.getElementById('imgGafas');
+                        // Actualizar la URL de la imagen de prueba de gafas
+                        imgGafas.src = `${window.location.origin}/video_feed/${productoId}`;
+    
+                        // También podrías abrir un modal aquí si necesitas mostrar más detalles o confirmaciones
+                    });
+    
+                    const favoritoBtn = productoDiv.querySelector('.favorito-btn');
+                    favoritoBtn.addEventListener('click', async function () {
+                        const productoId = this.getAttribute('data-producto-id');
+                        const estadoActual = this.classList.contains('favorito-activo');
+    
+                        // Mostrar modal de confirmación si no está en estado activo
+                        if (!estadoActual) {
+                            $('#confirmarModal').modal('show');
+                        }
+    
+                        $('#confirmarBtn').off('click').on('click', async function () {
+                            $('#confirmarModal').modal('hide');
+                            try {
+                                const response = await fetch(`/api/productos/${productoId}/favorito`, {
+                                    method: estadoActual ? 'DELETE' : 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    }
+                                });
+    
+                                if (!response.ok) {
+                                    throw new Error('Error al actualizar favorito');
+                                }
+    
+                                // Cambiar estado del botón y su icono
+                                favoritoBtn.classList.toggle('favorito-activo');
+                                const iconoCorazon = favoritoBtn.querySelector('i.fa-heart');
+                                if (estadoActual) {
+                                    iconoCorazon.classList.remove('text-danger');
+                                } else {
+                                    iconoCorazon.classList.add('text-danger');
+                                }
+    
+                            } catch (error) {
+                                console.error('Error:', error);
+                            }
+                        });
+                    });
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+    </script>
+    
+    
+</body>
+</html>

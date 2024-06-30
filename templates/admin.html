@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gafas</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <style>
+    .producto {
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      padding: 10px;
+    }
+    .producto img {
+      max-width: 100px;
+      max-height: 100px;
+      margin-bottom: 10px;
+    }
+    .navbar {
+      background-color: #343a40;
+      color: #ffffff;
+    }
+    .navbar-brand {
+      color: #ffffff;
+    }
+    .navbar-brand:hover {
+      color: #ffffff;
+    }
+    .bg-fondo {
+      background-image: url("/static/img/fondo.jpg");
+      background-size: cover;
+      background-repeat: no-repeat;
+    }
+  </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <a class="navbar-brand" href="/">LENSAPAR</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="/">Inicio</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a href="/logout" class="btn btn-danger ml-2">Logout</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/user" class="btn btn-danger ml-2">Crear Usuario</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+<body>
+    <div class="container mt-4">
+        <h2>AGREGAR O MODIFICAR PRODUCTOS</h2>
+        <form id="formulario-producto" enctype="multipart/form-data" class="mb-4 row">
+            <input type="hidden" id="producto_id" name="producto_id">
+            
+            <div class="form-group col-md-2">
+                <label for="nombre">Nombre:</label>
+                <input type="text" id="nombre" name="nombre" class="form-control" required>
+            </div>
+            
+            <div class="form-group col-md-4">
+                <label for="descripcion">Descripción:</label>
+                <textarea id="descripcion" name="descripcion" class="form-control" rows="4"></textarea>
+            </div>
+            
+            <div class="form-group col-md-2">
+                <label for="precio">Precio:</label>
+                <input type="number" id="precio" name="precio" class="form-control" step="0.01" required>
+            </div>
+            
+            <div class="form-group col-md-4">
+                <label for="imagen">Imagen:</label>
+                <input type="file" id="imagen" name="imagen" class="form-control-file" accept="image/*">
+                <img id="preview-imagen" src="" alt="Vista previa de la imagen" style="display: none;" class="mt-2 img-thumbnail">
+            </div>
+            
+            <div class="form-group col-md-12 text-right">
+                <button type="submit" class="btn btn-primary">Guardar Producto</button>
+            </div>
+        </form>
+        
+        <div class="row">
+            <div class="col-md-12">
+                <h1 class="mb-4">LISTA DE PRODUCTOS</h1>
+
+                <div id="productos-container" class="row">
+                    <!-- Aquí se mostrarán los productos -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- jQuery y Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <style>
+        .producto {
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+            padding: 15px;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .producto:hover {
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .producto img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .producto div {
+            padding: 10px;
+        }
+
+        .producto h3 {
+            margin-top: 10px;
+            font-size: 1.5rem;
+        }
+
+        .producto p {
+            margin-bottom: 5px;
+        }
+    </style>
+
+    <script>
+        $(document).ready(function() {
+            function cargarProductos() {
+                $.ajax({
+                    url: '/api/productos',
+                    type: 'GET',
+                    success: function(productos) {
+                        const productosContainer = $('#productos-container');
+                        productosContainer.empty();
+                        productos.forEach(producto => {
+                            const productoDiv = $(`
+                                <div class="producto">
+                                    <img src="${producto.imagen}" alt="Imagen del producto">
+                                    <div>
+                                        <h3>${producto.nombre}</h3>
+                                        <p><strong>Descripción:</strong> ${producto.descripcion}</p>
+                                        <p><strong>Precio:</strong> $${producto.precio}</p>
+                                        <button onclick="editarProducto(${producto.id})">Editar</button>
+                                        <button onclick="eliminarProducto(${producto.id})">Eliminar</button>
+                                    </div>
+                                </div>
+                            `);
+                            productosContainer.append(productoDiv);
+                        });
+                    },
+                    error: function() {
+                        alert('Error al cargar los productos');
+                    }
+                });
+            }
+
+
+            
+            // Función para editar un producto
+            window.editarProducto = function(idProducto) {
+                $.ajax({
+                    url: `/api/productos/${idProducto}`,
+                    type: 'GET',
+                    success: function(producto) {
+                        $('#producto_id').val(producto.id);
+                        $('#nombre').val(producto.nombre);
+                        $('#descripcion').val(producto.descripcion);
+                        $('#precio').val(producto.precio);
+                        if (producto.imagen) {
+                            $('#preview-imagen').attr('src', producto.imagen).show();
+                        } else {
+                            $('#preview-imagen').hide();
+                        }
+
+                        $('#formulario-producto').off('submit').on('submit', function(event) {
+                            event.preventDefault();
+                            const formData = new FormData(this);
+                            $.ajax({
+                                url: `/api/productos/${idProducto}`,
+                                type: 'PUT',
+                                data: formData,
+                                processData: false,
+                                contentType: false,
+                                success: function() {
+                                    cargarProductos();
+                                    cargarFavoritos(); // Actualizar también la lista de favoritos
+                                    $('#formulario-producto')[0].reset();
+                                    $('#preview-imagen').hide();
+                                    alert('Producto actualizado correctamente');
+                                },
+                                error: function() {
+                                    alert('Error al actualizar el producto');
+                                }
+                            });
+                        });
+                    },
+                    error: function() {
+                        alert('Error al obtener el producto');
+                    }
+                });
+            }
+
+            // Función para eliminar un producto
+            window.eliminarProducto = function(idProducto) {
+                const confirmacion = confirm('¿Estás seguro de eliminar este producto?');
+                if (confirmacion) {
+                    $.ajax({
+                        url: `/api/productos/${idProducto}`,
+                        type: 'DELETE',
+                        success: function() {
+                            cargarProductos();
+                            cargarFavoritos(); // Actualizar también la lista de favoritos
+                            alert('Producto eliminado correctamente');
+                        },
+                        error: function() {
+                            alert('Error al eliminar el producto');
+                        }
+                    });
+                }
+            }
+
+            $('#formulario-producto').submit(function(event) {
+                event.preventDefault();
+                const formData = new FormData(this);
+                $.ajax({
+                    url: '/api/productos',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function() {
+                        cargarProductos();
+                        cargarFavoritos(); // Actualizar también la lista de favoritos
+                        $('#formulario-producto')[0].reset();
+                        $('#preview-imagen').hide();
+                        alert('Producto creado correctamente');
+                    },
+                    error: function() {
+                        alert('Error al crear el producto');
+                    }
+                });
+            });
+            cargarProductos();
+        });
+    </script>
+</body>
+</html>
+
